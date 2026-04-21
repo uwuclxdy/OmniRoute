@@ -802,11 +802,8 @@ test("DefaultExecutor.execute does not produce duplicate anthropic-version heade
   let capturedHeaders: Record<string, string> = {};
 
   globalThis.fetch = async (_url, init = {}) => {
-    const h = init.headers as Record<string, string>;
-    // Normalise to lowercase to mirror what undici/fetch does when sending.
-    capturedHeaders = Object.fromEntries(
-      Object.entries(h || {}).map(([k, v]) => [k.toLowerCase(), v])
-    );
+    // Capture raw headers without normalisation so case-variant duplicate keys are visible.
+    capturedHeaders = (init.headers as Record<string, string>) || {};
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -833,6 +830,10 @@ test("DefaultExecutor.execute does not produce duplicate anthropic-version heade
     globalThis.fetch = originalFetch;
   }
 
-  // Must be exactly the canonical value — not "2023-06-01, 2023-06-01"
-  assert.equal(capturedHeaders["anthropic-version"], "2023-06-01");
+  // Must be exactly one key — not multiple case variants that undici would combine
+  const versionKeys = Object.keys(capturedHeaders).filter(
+    (k) => k.toLowerCase() === "anthropic-version"
+  );
+  assert.equal(versionKeys.length, 1, "Duplicate anthropic-version header keys found");
+  assert.equal(capturedHeaders[versionKeys[0]], "2023-06-01");
 });
