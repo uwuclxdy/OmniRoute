@@ -28,12 +28,24 @@ const CREDITS_EXHAUSTED_TTL_MS = 5 * 60 * 60 * 1000; // 5 hours
 
 const BARE_PRO_IDS = new Set(["gemini-3.1-pro"]);
 
+function cloneAntigravityRequestBody(body: unknown): unknown {
+  if (!body || typeof body !== "object") {
+    return body;
+  }
+
+  try {
+    return structuredClone(body);
+  } catch {
+    return JSON.parse(JSON.stringify(body));
+  }
+}
+
 function serializeAntigravityRequest(
   provider: string,
   headers: Record<string, string>,
   body: unknown
 ): { headers: Record<string, string>; bodyString: string } {
-  const serializedBody = body && typeof body === "object" ? structuredClone(body) : body;
+  const serializedBody = cloneAntigravityRequestBody(body);
 
   if (!isCliCompatEnabled(provider)) {
     return { headers, bodyString: JSON.stringify(serializedBody) };

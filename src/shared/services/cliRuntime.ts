@@ -728,7 +728,7 @@ const locateCommandCandidate = async (
       }
 
       if (result.reason && result.reason !== "not_found") {
-        return { command: commands[0], installed: false, commandPath: null, reason: "not_found" };
+        return { command: commands[0], ...result };
       }
     }
   }
