@@ -33,10 +33,12 @@ function serializeAntigravityRequest(
   headers: Record<string, string>,
   body: unknown
 ): { headers: Record<string, string>; bodyString: string } {
+  const serializedBody = body && typeof body === "object" ? structuredClone(body) : body;
+
   if (!isCliCompatEnabled(provider)) {
-    return { headers, bodyString: JSON.stringify(body) };
+    return { headers, bodyString: JSON.stringify(serializedBody) };
   }
-  return applyFingerprint(provider, { ...headers }, body);
+  return applyFingerprint(provider, { ...headers }, serializedBody);
 }
 
 type AntigravityCollectedStream = {
@@ -585,7 +587,11 @@ export class AntigravityExecutor extends BaseExecutor {
       }
 
       try {
-        const serializedRequest = serializeAntigravityRequest(this.provider, headers, transformedBody);
+        const serializedRequest = serializeAntigravityRequest(
+          this.provider,
+          headers,
+          transformedBody
+        );
         const finalHeaders = serializedRequest.headers;
 
         const response = await fetch(url, {
